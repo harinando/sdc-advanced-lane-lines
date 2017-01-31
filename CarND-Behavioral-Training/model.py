@@ -27,25 +27,6 @@ from loader import __train_test_split, generate_batches, __generate_arrays_from_
 """
 
 
-def feature_extraction():
-    base_model = VGG16(weights='imagenet', include_top=False, input_shape=(160, 320, 3))
-    x = VGG16(weights='imagenet',include_top=False,input_shape=(160,320,3))
-    x = base_model.output
-    x = GlobalAveragePooling2D()(x)
-    x = Dense(1024, activation='relu', name='fc1')(x)
-    x = Dropout(0.5)(x)
-    x = Dense(128, activation='relu',  name='fc2')(x)
-    x = Dropout(0.5)(x)
-    x = Dense(16, activation='relu',  name='fc3')(x)
-    predictions = Dense(1, name='readout')(x)
-    model = Model(input=base_model.input, output=predictions)
-
-    for layer in base_model.layers:
-        layer.trainable = False
-
-    logging.debug(model.summary)
-    return model
-
 def NvidiaModel():
     input_model = Input(shape=(WIDTH, HEIGHT, DEPTH))
     x = Convolution2D(24, 5, 5, border_mode='valid', subsample=(2, 2), W_regularizer=l2(ALPHA))(input_model)
@@ -101,11 +82,6 @@ if __name__ == '__main__':
     # except IOError:
     #     print("No model found")
 
-
-    # Saves the model...
-    with open('model.json', 'w') as f:
-        f.write(model.to_json())
-
     checkpointer = ModelCheckpoint('.hdf5_checkpoints/weights.{epoch:02d}-{val_loss:.3f}.hdf5')
     early_stop = EarlyStopping(monitor='val_loss', patience=2, verbose=0, mode='auto')
 
@@ -115,3 +91,7 @@ if __name__ == '__main__':
                         validation_data=generate_batches(df_val, BATCH_SIZE),
                         nb_val_samples=40*BATCH_SIZE,
                         callbacks=[checkpointer, early_stop])
+
+    # Saves the model...
+    with open('model.json', 'w') as f:
+        f.write(model.to_json())
