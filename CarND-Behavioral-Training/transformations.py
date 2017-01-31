@@ -21,6 +21,11 @@ class Grayscale(Transform):
         return '{}'.format('Grayscale')
 
 
+class RGB2HSV(Transform):
+
+    def apply(self, img):
+        return cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+
 class Normalizer(Transform):
 
     def __init__(self, a=-0.5, b=0.5, min=0, max=255):
@@ -172,6 +177,7 @@ def Preproc(img):
     preproc = Preprocess([
         # Grayscale(),
         # Equalizer(),
+        RGB2HSV(),
         Crop(50, 270, 20, 140),
         Resize(200, 66),
         Normalizer(a=-0.5, b=0.5)
@@ -191,7 +197,11 @@ def Shift(_img, by=10):
     img = Resize(width, height).apply(img)
     return img
 
+"""
+What worked....
+0.01
+"""
 def RandomShift(img, steering):
-    tx = np.random.randint(-50, 50)
-    steering += tx*0.0008
+    tx = np.random.randint(-70, 70)
+    steering += tx*0.01
     return Shift(img, tx), steering

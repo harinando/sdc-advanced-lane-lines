@@ -31,26 +31,26 @@ def NvidiaModel():
     input_model = Input(shape=(WIDTH, HEIGHT, DEPTH))
     x = Convolution2D(24, 5, 5, border_mode='valid', subsample=(2, 2), W_regularizer=l2(ALPHA))(input_model)
     x = ELU()(x)
-    x = Dropout(0.2)(x)
+    x = Dropout(KEEP_PROB)(x)
     x = Convolution2D(36, 5, 5, border_mode='valid', subsample=(2, 2))(x)
     x = ELU()(x)
-    x = Dropout(0.2)(x)
+    x = Dropout(KEEP_PROB)(x)
     x = Convolution2D(48, 5, 5, border_mode='valid', subsample=(2, 2))(x)
     x = ELU()(x)
-    x = Dropout(0.2)(x)
+    x = Dropout(KEEP_PROB)(x)
     x = Convolution2D(64, 3, 3, border_mode='valid')(x)
     x = ELU()(x)
-    x = Dropout(0.2)(x)
+    x = Dropout(KEEP_PROB)(x)
     x = Convolution2D(64, 3, 3, border_mode='valid')(x)
     x = ELU()(x)
-    x = Dropout(0.2)(x)
+    x = Dropout(KEEP_PROB)(x)
     x = Flatten()(x)
     x = Dense(100)(x)
     x = ELU()(x)
-    x = Dropout(0.2)(x)
+    x = Dropout(KEEP_PROB)(x)
     x = Dense(50)(x)
     x = ELU()(x)
-    x = Dropout(0.2)(x)
+    x = Dropout(KEEP_PROB)(x)
     x = Dense(10)(x)
     x = ELU()(x)
     predictions = Dense(1)(x)
@@ -60,12 +60,13 @@ def NvidiaModel():
     return model
 
 BATCH_SIZE = 128
-EPOCHS = 10
+EPOCHS = 25
 FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
 WIDTH = 66
 HEIGHT = 200
 DEPTH = 3
 ALPHA = 0.01
+KEEP_PROB = 0.5
 
 if __name__ == '__main__':
 
@@ -77,21 +78,20 @@ if __name__ == '__main__':
 
     model = NvidiaModel()
 
+    # Saves the model...
+    with open('model.json', 'w') as f:
+        f.write(model.to_json())
     # try:
     #     model.load_weights('model.h5')
     # except IOError:
     #     print("No model found")
 
     checkpointer = ModelCheckpoint('.hdf5_checkpoints/weights.{epoch:02d}-{val_loss:.3f}.hdf5')
-    early_stop = EarlyStopping(monitor='val_loss', patience=2, verbose=0, mode='auto')
+    early_stop = EarlyStopping(monitor='val_loss', patience=3, verbose=0, mode='auto')
 
-    model.fit_generator(generate_batches(df_train, BATCH_SIZE),
+    history = model.fit_generator(generate_batches(df_train, BATCH_SIZE),
                         nb_epoch=EPOCHS,
-                        samples_per_epoch=200*BATCH_SIZE,
-                        validation_data=generate_batches(df_val, BATCH_SIZE),
-                        nb_val_samples=40*BATCH_SIZE,
+                        samples_per_epoch=400*BATCH_SIZE,
+                        validation_data=generate_batches(df_val, BATCH_SIZE/4),
+                        nb_val_samples=100*BATCH_SIZE,
                         callbacks=[checkpointer, early_stop])
-
-    # Saves the model...
-    with open('model.json', 'w') as f:
-        f.write(model.to_json())
