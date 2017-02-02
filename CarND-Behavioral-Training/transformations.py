@@ -170,20 +170,31 @@ class Equalizer(Transform):
     def apply(self, img):
         return self.trans.apply(img)
 
+
 def Preproc(img):
     if img.size == 0:
         return img
 
     preproc = Preprocess([
-        # Grayscale(),
-        # Equalizer(),
         RGB2HSV(),
         Crop(50, 270, 20, 140),
-        Resize(200, 66),
+        Resize(200, 66)
         Normalizer(a=-0.5, b=0.5)
     ])
 
     return preproc.apply(img)
+
+
+class Flip(Transform):
+
+    def __init__(self, horizontal=True):
+        self.horizontal = horizontal
+
+    def apply(self, img):
+        if self.horizontal:
+            return cv2.flip(img, 1)
+        return cv2.flip(img, 0)
+
 
 def Shift(_img, by=10):
 
@@ -200,8 +211,39 @@ def Shift(_img, by=10):
 """
 What worked....
 0.01
+Tried with 70-70 which worked best...
+
+
+--------------------
+.hdf5_checkpoints-6  ---- random-translation: -30
+    BATCH_SIZE = 128
+    EPOCHS = 30
+    FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
+    ALPHA = 0.01 on ConvNetLayers
+    DROPOUT = 0.5 on FC layer
+
+    Preproc
+        - RandomShift
+        - RandomFlip
+        - RandomBrightness
+
 """
 def RandomShift(img, steering):
-    tx = np.random.randint(-70, 70)
+    if np.random.uniform() < 0.5:
+        return img, steering
+    tx = np.random.randint(-30, 30)
     steering += tx*0.01
     return Shift(img, tx), steering
+
+
+def RandomFlip(img, steering):
+    if np.random.uniform() < 0.5:
+        return img, steering
+    return Flip().apply(img), -steering
+
+
+def RandomBrightness(img, steering):
+    if np.random.uniform() < 0.5:
+        return img, steering
+    img[:, :, 2] = img[:, :, 2] * np.random.uniform()
+    return img, steering
