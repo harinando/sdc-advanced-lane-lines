@@ -178,7 +178,7 @@ def Preproc(img):
     preproc = Preprocess([
         RGB2HSV(),
         Crop(50, 270, 20, 140),
-        Resize(200, 66)
+        Resize(200, 66),
         Normalizer(a=-0.5, b=0.5)
     ])
 
@@ -231,7 +231,7 @@ Tried with 70-70 which worked best...
 def RandomShift(img, steering):
     if np.random.uniform() < 0.5:
         return img, steering
-    tx = np.random.randint(-30, 30)
+    tx = np.random.randint(-15, 15)
     steering += tx*0.01
     return Shift(img, tx), steering
 
