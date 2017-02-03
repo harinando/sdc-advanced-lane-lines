@@ -33,6 +33,7 @@ def plots(images, row=None, col=None, figsize=(8, 6), labels=[], grid=True):
     plt.tight_layout()
     plt.show()
 
+
 def plotsFeatures(img, model, depth):
     elu = Model(input=model.layers[0].input, output=model.layers[depth].output)
     elu.compile(optimizer='adam', loss='mse')

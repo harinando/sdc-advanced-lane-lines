@@ -195,19 +195,6 @@ class Flip(Transform):
             return cv2.flip(img, 1)
         return cv2.flip(img, 0)
 
-
-def Shift(_img, by=10):
-
-    height = _img.shape[0]
-    width = _img.shape[1]
-    img = Translate(by_x=by, by_y=0).apply(_img)
-    if by > 0:
-        img = Crop(by, width, 0, height).apply(img)
-    else:
-        img = Crop(0, width+by, 0, height).apply(img)
-    img = Resize(width, height).apply(img)
-    return img
-
 """
 What worked....
 0.01
@@ -228,12 +215,28 @@ Tried with 70-70 which worked best...
         - RandomBrightness
 
 """
+def Shift(_img, by_x=0, by_y=0):
+    height = _img.shape[0]
+    width = _img.shape[1]
+    img = Translate(by_x=by_x, by_y=by_y).apply(_img)
+    if by_x > 0 and by_y > 0:
+        img = Crop(by_x, width, by_y, height).apply(img)
+    elif by_x > 0 and by_y < 0:
+        img = Crop(by_x, width, 0, height+by_y).apply(img)
+    elif by_x < 0 and by_y < 0:
+        img = Crop(0, width + by_x, 0, height + by_y).apply(img)
+    elif by_x < 0 and by_y > 0:
+        img = Crop(0, width + by_x, by_y, height).apply(img)
+    img = Resize(width, height).apply(img)
+    return img
+
+
 def RandomShift(img, steering):
     if np.random.uniform() < 0.5:
         return img, steering
-    tx = np.random.randint(-10, 10)
+    tx = np.random.randint(-30, 30)
     steering += tx*0.01
-    return Shift(img, tx), steering
+    return Shift(img, tx, tx), steering
 
 
 def RandomFlip(img, steering):
