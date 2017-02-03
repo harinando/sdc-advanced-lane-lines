@@ -231,7 +231,7 @@ Tried with 70-70 which worked best...
 def RandomShift(img, steering):
     if np.random.uniform() < 0.5:
         return img, steering
-    tx = np.random.randint(-15, 15)
+    tx = np.random.randint(-10, 10)
     steering += tx*0.01
     return Shift(img, tx), steering
 
