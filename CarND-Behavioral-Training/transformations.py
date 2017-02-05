@@ -236,7 +236,7 @@ def RandomShift(img, steering):
         return img, steering
     tx = np.random.randint(-30, 30)
     steering += tx*0.005
-    return Shift(img, tx, 0), steering
+    return Shift(img, tx, np.random.randint(-30, 30)), steering
 
 
 def RandomFlip(img, steering):
