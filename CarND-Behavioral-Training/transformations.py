@@ -219,13 +219,13 @@ def Shift(_img, by_x=0, by_y=0):
     height = _img.shape[0]
     width = _img.shape[1]
     img = Translate(by_x=by_x, by_y=by_y).apply(_img)
-    if by_x > 0 and by_y > 0:
+    if by_x >= 0 and by_y >= 0:
         img = Crop(by_x, width, by_y, height).apply(img)
-    elif by_x > 0 and by_y < 0:
+    elif by_x >= 0 and by_y < 0:
         img = Crop(by_x, width, 0, height+by_y).apply(img)
     elif by_x < 0 and by_y < 0:
         img = Crop(0, width + by_x, 0, height + by_y).apply(img)
-    elif by_x < 0 and by_y > 0:
+    elif by_x < 0 and by_y >= 0:
         img = Crop(0, width + by_x, by_y, height).apply(img)
     img = Resize(width, height).apply(img)
     return img
@@ -235,8 +235,8 @@ def RandomShift(img, steering):
     if np.random.uniform() < 0.5:
         return img, steering
     tx = np.random.randint(-30, 30)
-    steering += tx*0.01
-    return Shift(img, tx, tx), steering
+    steering += tx*0.005
+    return Shift(img, tx, 0), steering
 
 
 def RandomFlip(img, steering):
