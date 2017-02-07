@@ -13,7 +13,7 @@ from keras.layers import Input, Dense, GlobalAveragePooling2D, Flatten,Lambda,EL
 from keras.models import Model, Sequential
 from keras.regularizers import l2
 import argparse
-from loader import __train_test_split, generate_batches
+from loader import __train_test_split, generate_batches, generate_validation
 
 """ Usefeful link
 		ImageDataGenerator 		- https://keras.io/preprocessing/image/
@@ -31,19 +31,14 @@ def NvidiaModel(learning_rate, dropout):
     input_model = Input(shape=(WIDTH, HEIGHT, DEPTH))
     x = Convolution2D(24, 5, 5, border_mode='valid', subsample=(2, 2), W_regularizer=l2(learning_rate))(input_model)
     x = ELU()(x)
-    # x = Dropout(dropout)(x)
     x = Convolution2D(36, 5, 5, border_mode='valid', subsample=(2, 2), W_regularizer=l2(learning_rate))(x)
     x = ELU()(x)
-    # x = Dropout(dropout)(x)
     x = Convolution2D(48, 5, 5, border_mode='valid', subsample=(2, 2), W_regularizer=l2(learning_rate))(x)
     x = ELU()(x)
-    # x = Dropout(dropout)(x)
     x = Convolution2D(64, 3, 3, border_mode='valid', subsample=(1, 1), W_regularizer=l2(learning_rate))(x)
     x = ELU()(x)
-    # x = Dropout(dropout)(x)
     x = Convolution2D(64, 3, 3, border_mode='valid', subsample=(1, 1), W_regularizer=l2(learning_rate))(x)
     x = ELU()(x)
-    # x = Dropout(dropout)(x)
     x = Flatten()(x)
     x = Dense(100)(x)
     x = ELU()(x)
@@ -60,12 +55,12 @@ def NvidiaModel(learning_rate, dropout):
     return model
 
 BATCH_SIZE = 128
-EPOCHS = 30
+EPOCHS = 10
 FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
 WIDTH = 66
 HEIGHT = 200
 DEPTH = 3
-ALPHA = 0.01
+ALPHA = 0.001
 DROPOUT = 0.5
 
 if __name__ == '__main__':
@@ -87,7 +82,7 @@ if __name__ == '__main__':
     print('-------------')
 
     # split data into training and testing
-    df_train, df_val = __train_test_split('data/driving_log.csv')
+    df_train, df_val = __train_test_split('data/driving_log.csv', False)
 
     print('TRAIN:', len(df_train))
     print('VALIDATION:', len(df_val))
@@ -110,10 +105,10 @@ if __name__ == '__main__':
     logger = CSVLogger(filename='.hdf5_checkpoints/history.csv')
 
     history = model.fit_generator(
-        generate_batches(df_train, BATCH_SIZE),
+        generate_batches(df_train, args.batch),
         nb_epoch=args.epoch,
         samples_per_epoch=400*args.batch,
-        validation_data=generate_batches(df_val, args.batch/4),
-        nb_val_samples=100*BATCH_SIZE,
+        validation_data=generate_batches(df_val, args.batch),
+        nb_val_samples=100*args.batch,
         callbacks=[checkpointer, early_stop, logger]
     )
