@@ -171,6 +171,9 @@ class Equalizer(Transform):
         return self.trans.apply(img)
 
 
+"""
+Preprocessing images.
+"""
 def Preproc(img):
     if img.size == 0:
         return img
@@ -230,7 +233,9 @@ def Shift(_img, by_x=0, by_y=0):
     img = Resize(width, height).apply(img)
     return img
 
-
+"""
+Randomly shift images
+"""
 def RandomShift(img, steering):
     if np.random.uniform() < 0.5:
         return img, steering
@@ -238,13 +243,17 @@ def RandomShift(img, steering):
     steering += tx*0.005
     return Shift(img, tx, np.random.randint(-30, 30)), steering
 
-
+"""
+Randomly flip the images
+"""
 def RandomFlip(img, steering):
     if np.random.uniform() < 0.5:
         return img, steering
     return Flip().apply(img), -steering
 
-
+"""
+Randomly change the brightness
+"""
 def RandomBrightness(img, steering):
     if np.random.uniform() < 0.5:
         return img, steering

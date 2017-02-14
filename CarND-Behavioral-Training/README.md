@@ -43,7 +43,7 @@ My project includes the following files:
 ####2. Submssion includes functional code
 Using the Udacity provided simulator and my drive.py file, the car can be driven autonomously around the track by executing 
 ```sh
-python drive.py model.h5
+python drive.py model.json
 ```
 
 ####3. Submssion code is usable and readable
@@ -93,15 +93,14 @@ In order to gauge how well the model was working, I split my image and steering 
 
 To combat the overfitting, I added dropout layer after each dense layer which worked also pretty well for the "traffic sign recognition" project and l2 regularization after each convolution filters. To optimize the parameters of my regularizer, I performed a grid search with dropout values of {0.2, 0.3, 0.4, 0.5, 0.6} and learning rate of {0.1, 0.01, 0.001} and picked the model with the best mean square error on the validation set.
 
-Fine tuning the steering correction for the left and right images was laso challenging because high correction makes the car zig-zag on track 1. I tried different value without being able to successfully smoothout the driving on track 1 at full throttle. Driving at low speed was acceptable though.
+Fine tuning the steering correction for the left and right images was laso challenging because high correction makes the car zig-zag on track 1. I tried different value of steering correction and added more training set and was able to successfully smoothing out the driving on track 1 at full throttle. Similar approach was used on track 2 with the same results.
 
 The final step was to run the simulator to see how well the car was driving around track one. There were a few spots where the vehicle fell off the track:
 * The car could not enter the bridge because of the constrast in the images. To address the issue, I randomly dim/brighten the images while training. This will also help when there are shadow on the road or under different lighting conditions.
 * The car could not make turn that does not have explicit red marking or fence. This issue was addressed by using the left/right images as well as data augmentation. We performed random horizontal translation between -30 and 30 degrees of the center image and correct the steering angle by 0.05 degree per pixels.
 * To increase randomness we randomly flip the images and negate the steering angle.
 
-At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road. 
-Supprisingly, the car zig-zagged on track one on straight road but not on the turns. My assumption is that the correction angle in the horizontal shift as well as the left/right images is not accurate. To address the issue, I could compute that correction angle using open cv by computing the matrix translation and get a more accurate correction. 
+At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road.  
 
 ####2. Final Model Architecture
 
@@ -125,7 +124,7 @@ To capture good driving behavior, I augmented the datasets with appropriate tran
 
 ![alt text][image7]
 
-I did not drive in track 2 at all. Instead, I added vertical shift to simulate slopes and randomly dimmed the image to address the shadow in the other track. Suprinsingly, it worked prety well since I was able to drive on track 2 without zig-zagging as much. 
+I did not drive in track 2 at all. Instead, I added vertical shift to simulate slopes and randomly dimmed the image to address the shadow in the other track. Suprinsingly, it worked prety well since I was able to drive on track 2 without difficulties.
 
 To augment the dataset, I also flipped images and rotated the images thinking that this would give unique data points for my training. For example, here is an image that has then been flipped, rotated, and translated:
 
@@ -148,3 +147,7 @@ I used this training data for training the model. The validation set helped dete
 ![alt text][image10]
 
  I used an adam optimizer so that manually training the learning rate wasn't necessary.
+
+ Here are the you tube link of the two run, I recorded it with a camera because using the simulator and a video recording app on my laptop was very slow and made the car zig-zag all over the place.  
+ https://youtu.be/eAQ1PHDmhsQ 
+ https://youtu.be/0lXM-RIPIGU
