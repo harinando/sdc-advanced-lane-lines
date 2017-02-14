@@ -24,6 +24,13 @@ def generate_validation(df):
     return batch_x, batch_y
 
 
+"""
+Generator that generate batches for the neural network to train on.
+    - Randomly choose between left/center/right images
+    - Randomly shift the image
+    - Randomly flip the image
+    - Randomly change the brightness
+"""
 def generate_batches(df, batch_size):
 
     while True:
@@ -58,6 +65,9 @@ def generate_batches(df, batch_size):
                 batch_y = []
 
 
+"""
+Randomly split the dataset
+"""
 def __train_test_split(csvpath, balance=True):
     df = pd.read_csv(csvpath)
     if balance:

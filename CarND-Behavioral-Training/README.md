@@ -1,11 +1,5 @@
 #**Behavioral Cloning** 
 
-##Writeup Template
-
-###You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
----
-
 **Behavrioal Cloning Project**
 
 The goals / steps of this project are the following:
@@ -21,7 +15,7 @@ The goals / steps of this project are the following:
 [image1]: ./output/model.png "Model Visualization"
 [image2]: ./output/brightness.png "Random Brightness"
 [image3]: ./output/cropped.png "Cropped Image"
-[image4]: ./output/flipped.png "Flipped Image"
+[image4]: ./output/flip.png "Flipped Image"
 [image5]: ./output/rotated.png "Rotated Image"
 [image6]: ./output/flip+30.png "Translated & Cropped Image"
 [image7]: ./output/left-center-right.png "Left Center Right Image"
@@ -97,9 +91,9 @@ My first step was to use a convolution neural network model similar to the NVIDI
 
 In order to gauge how well the model was working, I split my image and steering angle data into a training and validation set. I found that my first model had a low mean squared error on the training set but a high mean squared error on the validation set. This implied that the model was overfitting. 
 
-To combat the overfitting, I added dropout layer after each dense layer which worked also pretty well for the "traffic sign recognition" project and l2 regularization after each convolution filters. To optimize the parameters of my regularizer, I performed a grid search with dropout values of {0.2, 0.3, 0.4, 0.5, 0.6} and learning rate of {0.1, 0.01, 0.001} and picked the model with best accuracy.
+To combat the overfitting, I added dropout layer after each dense layer which worked also pretty well for the "traffic sign recognition" project and l2 regularization after each convolution filters. To optimize the parameters of my regularizer, I performed a grid search with dropout values of {0.2, 0.3, 0.4, 0.5, 0.6} and learning rate of {0.1, 0.01, 0.001} and picked the model with the best mean square error on the validation set.
 
-Fine tuning the steering correction for the left and right images was laso challenging because high correction makes the car zig-zag on track #1. 
+Fine tuning the steering correction for the left and right images was laso challenging because high correction makes the car zig-zag on track 1. I tried different value without being able to successfully smoothout the driving on track 1 at full throttle. Driving at low speed was acceptable though.
 
 The final step was to run the simulator to see how well the car was driving around track one. There were a few spots where the vehicle fell off the track:
 * The car could not enter the bridge because of the constrast in the images. To address the issue, I randomly dim/brighten the images while training. This will also help when there are shadow on the road or under different lighting conditions.
@@ -107,7 +101,7 @@ The final step was to run the simulator to see how well the car was driving arou
 * To increase randomness we randomly flip the images and negate the steering angle.
 
 At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road. 
-Supprisingly, the car zig-zagged on track one on straight road but not on the turns. My assumption is that the correction angle in the horizontal shift as well as the left/right images is not correct. To address the issue, I could compute that correction angle using open cv by computing the matrix translation and get a more accurate correction. 
+Supprisingly, the car zig-zagged on track one on straight road but not on the turns. My assumption is that the correction angle in the horizontal shift as well as the left/right images is not accurate. To address the issue, I could compute that correction angle using open cv by computing the matrix translation and get a more accurate correction. 
 
 ####2. Final Model Architecture
 
