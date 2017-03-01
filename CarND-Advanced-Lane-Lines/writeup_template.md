@@ -24,7 +24,7 @@ The goals / steps of this project are the following:
 [image4]: ./output_images/warped-test1.jpg "Warp Example"
 [image5]: ./output_images/lanes-test1.jpg "Fit Visual"
 [image6]: ./output_images/output-test1.jpg "Output"
-[video1]: ./project_video.mp4 "Video"
+[video1]: ./output_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
 ###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
@@ -109,7 +109,9 @@ I implemented this step in the function `findLanes()` in my ipython notebook.  H
 
 ####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result](./output_video.mp4)
+![alt text][video1]
+
 
 ---
 
@@ -121,4 +123,8 @@ In overall, the color thresholding and gradient thresholding combined with persp
 
 - The perspective transformation is very fragile and might fail for different situation such as hilly road, sharp turns, car driving next on highway because the the source and the destination has been tuned manually using jupyter notebook widget. Instead, I should fit the source and destination of the perspective given the steering angle using neural network for instance.
 - Finding the lanes not optional and time consuming because I am always doing a full search, rather I should estimate the lanes in the next frame once I get the confidence that I have correctly detected the lanes by fitting a polynomial to it.
+
+
+Smoothing the fitted lines was very important while streaming the videos. I decided to keep track of the lanes of the last 15 frames, and averaged the value of the filters. Without smoothing, the lane was very wobbly especially when cars were passing by.
+
 
