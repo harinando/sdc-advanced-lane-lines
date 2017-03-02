@@ -72,11 +72,11 @@ The `Warp()` function takes as inputs an image (`img`).  I chose the hardcode th
 This resulted in the following source and destination points:
 
 | Source        | Destination   | 
-|:-------------:|:-------------:| 
+|:-------------:|:-------------:|
 | 590, 470      | 260,   0      | 
 | 750, 470      | 460,   0      |
-| 1190, 700     | 460, 720      |
-| 260, 700      | 269, 730      |
+| 1190, 700     | 460,1280      |
+| 260, 700      | 260,1280      |
 
 
 The optimal value of the source and destination was computed from a slider widget in the ipython notebook in the ** Compute Perspective transform ** section. 
