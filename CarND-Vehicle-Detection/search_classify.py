@@ -103,25 +103,6 @@ def search_windows(img, windows, clf, scaler, color_space='RGB',
     #8) Return windows for positive detections
     return on_windows
 
-
-def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins):
-
-    draw_img, box_list = find_candidates(img, ystart, ystop, scale, svc, X_scaler,orient, pix_per_cell, cell_per_block, spatial_size, hist_bins)
-
-    heat = np.zeros_like(img[:,:,0]).astype(np.float)
-    heat = add_heat(heat, box_list)
-
-    # Apply threshold to help remove false positives
-    heat = apply_threshold(heat,1)
-
-    # Visualize the heatmap when displaying
-    heatmap = np.clip(heat, 0, 255)
-
-    # Find final boxes from heatmap using label function
-    labels = label(heatmap)
-    draw_img = draw_labeled_bboxes(np.copy(img), labels)
-    return draw_img
-
 # Define a single function that can extract features using hog sub-sampling and make predictions
 def find_candidates(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins):
     bboxes = []
