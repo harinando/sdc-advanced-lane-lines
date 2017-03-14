@@ -13,7 +13,8 @@ from keras.layers import Input, Dense, GlobalAveragePooling2D, Flatten,Lambda,EL
 from keras.models import Model, Sequential
 from keras.regularizers import l2
 import argparse
-from loader import __train_test_split, generate_batches, generate_validation
+import os
+from loader import __train_test_split, generate_batches, generate_thunderhill_batches, getDataFromFolder
 
 """ Usefeful link
 		ImageDataGenerator 		- https://keras.io/preprocessing/image/
@@ -62,6 +63,7 @@ HEIGHT = 200
 DEPTH = 3
 ALPHA = 0.001
 DROPOUT = 0.5
+OUTPUT = '.hdf5_checkpoints'
 
 if __name__ == '__main__':
 
@@ -70,7 +72,9 @@ if __name__ == '__main__':
     parser.add_argument('--epoch', type=int, default=EPOCHS, help='Number of epochs.')
     parser.add_argument('--alpha', type=float, default=ALPHA, help='Learning rate')
     parser.add_argument('--dropout', type=float, default=DROPOUT, help='Dropout rate')
-    parser.add_argument('--loadWeights', type=bool, default=False, help='Load weights')
+    parser.add_argument('--weights', type=str, help='Load weights')
+    parser.add_argument('--dataset', type=str, required=True, help='Get dataset here')
+    parser.add_argument('--output', type=str, default=OUTPUT, help='Save model here')
     args = parser.parse_args()
 
     print('-------------')
@@ -79,36 +83,43 @@ if __name__ == '__main__':
     print('ALPA: {}'.format(args.alpha))
     print('DROPOUT: {}'.format(args.dropout))
     print('Load Weights?: {}'.format(args.loadWeights))
+    print('Dataset: {}'.format(args.dataset))
+    print('Model: {}'.format(args.output))
     print('-------------')
 
-    # split data into training and testing
-    df_train, df_val = __train_test_split('data/driving_log.csv', False)
+    if not os.path.exists(args.output):
+        os.makedirs(args.output)
 
+    # ROOT = '/Users/nando/Downloads/thunderhill_data/dataset_sim_000_km_few_laps'
+    # split data into training and testing
+    # df_train, df_val = __train_test_split('{}/driving_log.csv'.format(ROOT), False)
+    df_train, df_val = getDataFromFolder(args.dataset)
     print('TRAIN:', len(df_train))
     print('VALIDATION:', len(df_val))
 
     model = NvidiaModel(args.alpha, args.dropout)
 
     # Saves the model...
-    with open('.hdf5_checkpoints/model.json', 'w') as f:
+    with open(os.path.join(args.output, 'model.json'), 'w') as f:
         f.write(model.to_json())
 
     try:
-        if args.loadWeights:
+        if args.weights:
             print('Loading weights from file ...')
-            model.load_weights('model.h5')
+            model.load_weights(args.weights)
     except IOError:
         print("No model found")
 
-    checkpointer = ModelCheckpoint('.hdf5_checkpoints/weights.{epoch:02d}-{val_loss:.3f}.hdf5')
+
+    checkpointer = ModelCheckpoint(os.path.join(args.output, 'weights.{epoch:02d}-{val_loss:.3f}.hdf5'))
     early_stop = EarlyStopping(monitor='val_loss', patience=2, verbose=0, mode='auto')
-    logger = CSVLogger(filename='.hdf5_checkpoints/history.csv')
+    logger = CSVLogger(filename=os.path.join(args.output, 'history.csv'))
 
     history = model.fit_generator(
-        generate_batches(df_train, args.batch),
+        generate_thunderhill_batches(df_train, args.batch),
         nb_epoch=args.epoch,
         samples_per_epoch=400*args.batch,
-        validation_data=generate_batches(df_val, args.batch),
+        validation_data=generate_thunderhill_batches(df_val, args.batch),
         nb_val_samples=100*args.batch,
         callbacks=[checkpointer, early_stop, logger]
     )

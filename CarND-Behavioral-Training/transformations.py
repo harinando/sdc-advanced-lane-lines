@@ -180,7 +180,7 @@ def Preproc(img):
 
     preproc = Preprocess([
         RGB2HSV(),
-        Crop(50, 270, 20, 140),
+        # Crop(50, 270, 40, 140),
         Resize(200, 66),
         Normalizer(a=-0.5, b=0.5)
     ])
