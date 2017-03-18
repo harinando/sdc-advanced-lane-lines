@@ -12,6 +12,10 @@ from sklearn.preprocessing import StandardScaler
 from transformations import Preproc, RandomShift, RandomFlip, RandomBrightness, RandomRotation, RandomBlur, Resize
 from config import *
 
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVR
+
 def ReadImg(path):
     return np.array(cv2.cvtColor(cv2.imread(path.strip()), code=cv2.COLOR_BGR2RGB))
 
@@ -107,7 +111,7 @@ def __train_test_split(csvpath, balance=True):
     return train_test_split(df, test_size=0.2, random_state=42)
 
 
-def getDataFromFolder(folder, output, normalize=False, randomize=True, balance=True):
+def getDataFromFolder(folder, output, normalize=False, randomize=True, balance=True, split=True):
     data = pd.DataFrame(columns=COLUMNS)
     for csvpath in glob.glob('{}/**/driving_log.csv'.format(folder)):
         df = pd.read_csv(csvpath)
@@ -136,10 +140,13 @@ def getDataFromFolder(folder, output, normalize=False, randomize=True, balance=T
         # data = zeros.append(non_zeros)
 
     if randomize:
-        df = shuffle(data)
+        data = shuffle(data)
 
     if normalize:
         scaler = StandardScaler()
-        df[COLUMNS_TO_NORMALIZE] = scaler.fit_transform(df[COLUMNS_TO_NORMALIZE])
+        data[COLUMNS_TO_NORMALIZE] = scaler.fit_transform(data[COLUMNS_TO_NORMALIZE])
         pickle.dump(scaler, open(os.path.join(output, SCALER), 'wb'))
-    return train_test_split(df, test_size=0.2, random_state=42)
+
+    if split:
+        return train_test_split(data, test_size=0.2, random_state=42)
+    return data

@@ -183,7 +183,7 @@ def Preproc(img):
     preproc = Preprocess([
         RGB2HSV(),
         Crop(0, width, 40, height-10),     # x_min, x_max, y_min, y_max
-        Resize(128, 64),
+        Resize(WIDTH, HEIGHT),
         Normalizer(a=-1, b=1),
     ])
 

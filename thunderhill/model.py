@@ -9,7 +9,7 @@ from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping
 from keras.applications.vgg16 import VGG16
 from keras.preprocessing import image
 from keras.applications.vgg16 import preprocess_input
-from keras.layers import Input, Dense, GlobalAveragePooling2D, Flatten,Lambda,ELU
+from keras.layers import Input, Dense, GlobalAveragePooling2D, Flatten,Lambda,ELU, merge
 from keras.models import Model, Sequential
 from keras.regularizers import l2
 from keras.layers.normalization import BatchNormalization
@@ -61,8 +61,7 @@ def NvidiaModel(learning_rate, dropout):
     print(model.summary())
     return model
 
-
-def Nvidia(weights=None, include_top=True, dropout=0.5):
+def Nvidia(weights=None, include_top=True):
     input_model = Input(shape=(HEIGHT, WIDTH, DEPTH))
     # block #1
     x = Convolution2D(24, 5, 5, activation='elu', border_mode='same', subsample=(4, 4), init='he_normal', name='block1_conv1')(input_model)
@@ -82,12 +81,58 @@ def Nvidia(weights=None, include_top=True, dropout=0.5):
         x = Dense(1, name='prediction')(x)
 
     model = Model(input=input_model, output=x, name='nvidia')
-    model.compile(optimizer=Adam(lr=1e-4), loss='mse')
+    model.compile(optimizer=Adam(lr=0.0002), loss='mse')
 
-    if weights:
+    if weights is not None:
         model.load_weights(weights)
+    return model
 
-    print(model.summary())
+
+def Comma(includeTop=True):
+    input_model = Input(shape=(HEIGHT, WIDTH, DEPTH))
+    x = Convolution2D(16, 8, 8, activation='elu', subsample=(4, 4), border_mode="same", init='he_normal', name='block1_conv1')(input_model)
+    x = Convolution2D(32, 5, 5, activation='elu', subsample=(2, 2), border_mode="same", init='he_normal', name='block2_conv1')(x)
+    x = Convolution2D(64, 5, 5, activation='elu', subsample=(2, 2), border_mode="same", init='he_normal', name='block3_conv1')(x)
+    x = Dropout(0.2)(x)
+
+    if includeTop:
+        x = Flatten()(x)
+        x = Dense(512, activation='elu', name='fc1')(x)
+        x = Dropout(0.5)(x)
+        x = Dense(1, name='prediction')(x)
+
+    model = Model(input=input_model, output=x, name='comma')
+    model.compile(optimizer=Adam(lr=0.0002), loss='mse')
+    return model
+
+"""
+https://github.com/fchollet/keras/issues/2626
+"""
+def Hybrid():
+    input_model = Input(shape=(HEIGHT, WIDTH, DEPTH))
+    nvidia = Convolution2D(24, 5, 5, activation='elu', border_mode='same', subsample=(4, 4), init='he_normal', name='nvidia_conv1')(input_model)
+    nvidia = Convolution2D(36, 5, 5, activation='elu', border_mode='same', subsample=(2, 2), init='he_normal', name='nvidia_conv2')(nvidia)
+    nvidia = Convolution2D(48, 5, 5, activation='elu', border_mode='same', subsample=(2, 2), init='he_normal', name='nvidia_conv3')(nvidia)
+    nvidia = Convolution2D(64, 3, 3, activation='elu', border_mode='same', subsample=(1, 1), init='he_normal', name='nvidia_conv4')(nvidia)
+    nvidia = Convolution2D(64, 3, 3, activation='elu', border_mode='same', subsample=(1, 1), init='he_normal', name='nvidia_conv5')(nvidia)
+    nvidia = Flatten()(nvidia)
+    nvidia = Dense(100, activation='elu', init='he_normal', name='nvidia_fc1')(nvidia)
+    nvidia = Dense(50, activation='elu', init='he_normal', name='nvidia_fc2')(nvidia)
+    nvidia = Dense(10, activation='elu', init='he_normal', name='nvidia_fc3')(nvidia)
+
+    comma = Convolution2D(16, 8, 8, activation='elu', subsample=(4, 4), border_mode="same", init='he_normal', name='comma_conv1')(input_model)
+    comma = Convolution2D(32, 5, 5, activation='elu', subsample=(2, 2), border_mode="same", init='he_normal', name='comma_conv2')(comma)
+    comma = Convolution2D(64, 5, 5, activation='elu', subsample=(2, 2), border_mode="same", init='he_normal', name='comma_conv3')(comma)
+    comma = Dropout(0.2)(comma)
+    comma = Flatten()(comma)
+    comma = Dense(512, activation='elu', name='comma_fc1')(comma)
+    comma = Dropout(0.5)(comma)
+
+    concat = merge([nvidia, comma], mode='concat', concat_axis=-1, name="merged_layer")
+    concat = Dense(1, name='prediction')(concat)
+
+    model = Model(input=input_model, output=concat, name='hybrid')
+    model.compile(optimizer=Adam(lr=0.0002), loss='mse')
     return model
 
 if __name__ == '__main__':
@@ -125,7 +170,10 @@ if __name__ == '__main__':
     print('TRAIN:', len(df_train))
     print('VALIDATION:', len(df_val))
 
-    model = Nvidia()
+    models = [Nvidia(), Comma(), Hybrid()]
+    model = models[args.model]
+
+    print(model.summary())
 
     # Saves the model...
     with open(os.path.join(args.output, 'model.json'), 'w') as f:

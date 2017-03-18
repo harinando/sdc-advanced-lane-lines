@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 from keras.models import Model
+import pandas as pd
 from config import WIDTH, HEIGHT, DEPTH
 
 
@@ -38,12 +39,20 @@ def plots(images, row=None, col=None, figsize=(8, 6), labels=[], grid=True):
 def plotsFeatures(img, model, depth):
     elu = Model(input=model.layers[0].input, output=model.layers[depth].output)
     elu.compile(optimizer='adam', loss='mse')
-
     out = elu.predict(np.reshape(img, (1, HEIGHT, WIDTH, DEPTH)))
     feats = [cv2.resize(out[0, :, :, i], (WIDTH, HEIGHT)) for i in range(out.shape[-1])]
     col = 4
     row = out.shape[-1]/col
     plots(feats, row, col, figsize=(16, 12), grid=False)
+
+
+def plotLearningCurve(fname):
+    df = pd.read_csv(fname)
+    plt.figure(figsize=(16,12))
+    plt.plot(df['epoch'], df['loss'])
+    plt.plot(df['epoch'], df['val_loss'])
+    plt.legend(['loss', 'val'], loc='upper right')
+    plt.show()
 
 if __name__ == '__main__':
     pass
