@@ -181,10 +181,8 @@ def Preproc(img):
     height, width, depth = img.shape
 
     preproc = Preprocess([
-        RGB2HSV(),
-        Crop(0, width, 40, height-10),     # x_min, x_max, y_min, y_max
         Resize(WIDTH, HEIGHT),
-        Normalizer(a=-1, b=1),
+        RGB2HSV()
     ])
 
     return preproc.apply(img)
@@ -239,13 +237,11 @@ def Shift(_img, by_x=0, by_y=0):
 Randomly shift images
 """
 def RandomShift(img, steering, adjustment=0.005):
-    if np.random.uniform() < 0.5:
-        return img, steering
-    tx = np.random.randint(-30, 30)
+    tx = np.random.randint(-10, 10)
     steering += tx*adjustment
     steering = min(steering, 1)
     steering = max(steering, -1)
-    return Shift(img, tx, 0), steering
+    return Shift(img, tx, np.random.randint(-50, 10)), steering
 
 """
 Randomly flip the images
@@ -254,12 +250,11 @@ def RandomFlip(img, steering):
     if np.random.uniform() < 0.5:
         return img, steering
     return Flip().apply(img), -steering
+
 """
 Randomly change the brightness
 """
 def RandomBrightness(img, steering):
-    if np.random.uniform() < 0.5:
-        return img, steering
     img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
     img[:, :, 2] = img[:, :, 2] * np.random.uniform(0.25, 1.01)
     return cv2.cvtColor(img, cv2.COLOR_HSV2RGB), steering
@@ -268,9 +263,8 @@ def RandomBrightness(img, steering):
 Randomly rotate the images.
 """
 def RandomRotation(img, steering):
-    if np.random.uniform() < 0.5:
-        return img, steering
-    rot_angle = np.random.uniform(-10, 10)
+
+    rot_angle = np.random.uniform(-5, 5)
     return Rotate(rot_angle).apply(img), steering
 
 """

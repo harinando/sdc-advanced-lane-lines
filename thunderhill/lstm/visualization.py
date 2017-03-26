@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
-from keras.models import Model
 import pandas as pd
-from config import WIDTH, HEIGHT, DEPTH
+
+from keras.models import Model
+from nvidia3.config import WIDTH, HEIGHT, DEPTH
 
 
 def hist(dataset, attr, title=None, xlabel=None, ylabel=None, grid=True):

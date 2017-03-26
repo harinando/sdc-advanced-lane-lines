@@ -1,26 +1,17 @@
 # Import basic
-import logging
 
 # from keras.models import Sequential
-from keras.layers.core import Dense, Activation, Flatten, Dropout
-from keras.layers.convolutional import Convolution2D
-from keras.layers.pooling import MaxPooling2D
-from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping
-from keras.applications.vgg16 import VGG16
-from keras.preprocessing import image
-from keras.applications.vgg16 import preprocess_input
-from keras.layers import Input, Dense, GlobalAveragePooling2D, Flatten,Lambda,ELU, merge
-from keras.models import Model, Sequential
-from keras.regularizers import l2
-from keras.layers.normalization import BatchNormalization
-from keras.optimizers import Adam
-from keras.layers import LSTM
 import argparse
-import os
-from loader import __train_test_split, generate_batches, generate_thunderhill_batches, getDataFromFolder
-from config import *
-from keras import backend as K
 
+from keras.layers.core import Dense, Flatten, Dropout
+from keras.layers.convolutional import Convolution2D
+from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping, TensorBoard
+from keras.layers import Input, Dense, Flatten, ELU, merge
+from keras.models import Model
+from keras.regularizers import l2
+from keras.optimizers import Adam
+from nvidia.loader import generate_thunderhill_batches, getDataFromFolder
+from config import *
 
 """ Usefeful link
 		ImageDataGenerator 		- https://keras.io/preprocessing/image/
@@ -32,8 +23,6 @@ from keras import backend as K
 
 		Dropout 5x5
 """
-
-
 def NvidiaModel(learning_rate, dropout):
     input_model = Input(shape=(HEIGHT, WIDTH, DEPTH))
     x = Convolution2D(24, 5, 5, border_mode='valid', subsample=(2, 2), W_regularizer=l2(learning_rate))(input_model)
@@ -58,33 +47,6 @@ def NvidiaModel(learning_rate, dropout):
     predictions = Dense(1)(x)
     model = Model(input=input_model, output=predictions)
     model.compile(optimizer='adam', loss='mse')
-    print(model.summary())
-    return model
-
-def Nvidia(weights=None, include_top=True):
-    input_model = Input(shape=(HEIGHT, WIDTH, DEPTH))
-    # block #1
-    x = Convolution2D(24, 5, 5, activation='elu', border_mode='same', subsample=(4, 4), init='he_normal', name='block1_conv1')(input_model)
-    # block #2
-    x = Convolution2D(36, 5, 5, activation='elu', border_mode='same', subsample=(2, 2), init='he_normal', name='block2_conv1')(x)
-    # block #3
-    x = Convolution2D(48, 5, 5, activation='elu', border_mode='same', subsample=(2, 2), init='he_normal', name='block3_conv1')(x)
-    # block #4
-    x = Convolution2D(64, 3, 3, activation='elu', border_mode='same', subsample=(1, 1), init='he_normal', name='block4_conv1')(x)
-    x = Convolution2D(64, 3, 3, activation='elu', border_mode='same', subsample=(1, 1), init='he_normal', name='block4_conv2')(x)
-
-    if include_top:
-        x = Flatten()(x)
-        x = Dense(100, activation='elu', init='he_normal', name='fc1')(x)
-        x = Dense(50, activation='elu', init='he_normal', name='fc2')(x)
-        x = Dense(10, activation='elu', init='he_normal', name='fc3')(x)
-        x = Dense(1, name='prediction')(x)
-
-    model = Model(input=input_model, output=x, name='nvidia')
-    model.compile(optimizer=Adam(lr=0.0002), loss='mse')
-
-    if weights is not None:
-        model.load_weights(weights)
     return model
 
 
@@ -117,7 +79,9 @@ def Hybrid():
     nvidia = Convolution2D(64, 3, 3, activation='elu', border_mode='same', subsample=(1, 1), init='he_normal', name='nvidia_conv5')(nvidia)
     nvidia = Flatten()(nvidia)
     nvidia = Dense(100, activation='elu', init='he_normal', name='nvidia_fc1')(nvidia)
+    nvidia = Dropout(0.5)(nvidia)
     nvidia = Dense(50, activation='elu', init='he_normal', name='nvidia_fc2')(nvidia)
+    nvidia = Dropout(0.5)(nvidia)
     nvidia = Dense(10, activation='elu', init='he_normal', name='nvidia_fc3')(nvidia)
 
     comma = Convolution2D(16, 8, 8, activation='elu', subsample=(4, 4), border_mode="same", init='he_normal', name='comma_conv1')(input_model)
@@ -142,14 +106,14 @@ if __name__ == '__main__':
     parser.add_argument('--epoch', type=int, default=EPOCHS, help='Number of epochs.')
     parser.add_argument('--alpha', type=float, default=ALPHA, help='Learning rate')
     parser.add_argument('--dropout', type=float, default=DROPOUT, help='Dropout rate')
-    parser.add_argument('--width', type=int, default=WIDTH, help='Save model here')
-    parser.add_argument('--height', type=int, default=HEIGHT, help='Save model here')
-    parser.add_argument('--depth', type=int, default=DEPTH, help='Save model here')
+    parser.add_argument('--width', type=int, default=WIDTH, help='width')
+    parser.add_argument('--height', type=int, default=HEIGHT, help='height')
+    parser.add_argument('--depth', type=int, default=DEPTH, help='depth')
     parser.add_argument('--adjustement', type=float, default=ADJUSTMENT, help='x per pixel')
     parser.add_argument('--weights', type=str, help='Load weights')
-    parser.add_argument('--model', type=int, default=0, help='Chose a model')
-    parser.add_argument('--dataset', type=str, required=True, help='Get dataset here')
-    parser.add_argument('--output', type=str, required=True, help='Save model here')
+    parser.add_argument('--model', type=int, required=True, help='Chose a model')
+    parser.add_argument('--dataset', type=str, required=True, help='dataset path')
+    parser.add_argument('--output', type=str, required=True, help='output path')
     args = parser.parse_args()
 
     if not os.path.exists(args.output):
@@ -170,7 +134,7 @@ if __name__ == '__main__':
     print('TRAIN:', len(df_train))
     print('VALIDATION:', len(df_val))
 
-    models = [Nvidia(), Comma(), Hybrid()]
+    models = [NvidiaModel(args.alpha, args.dropout), Comma(), Hybrid()]
     model = models[args.model]
 
     print(model.summary())
@@ -187,14 +151,20 @@ if __name__ == '__main__':
         print("No model found")
 
     checkpointer = ModelCheckpoint(os.path.join(args.output, 'weights.{epoch:02d}-{val_loss:.3f}.hdf5'))
-    early_stop = EarlyStopping(monitor='val_loss', patience=2, verbose=0, mode='auto')
+    early_stop = EarlyStopping(monitor='val_loss', patience=20, verbose=0, mode='auto')
     logger = CSVLogger(filename=os.path.join(args.output, 'history.csv'))
+    board = TensorBoard(log_dir=args.output, histogram_freq=0, write_graph=True, write_images=True)
 
     history = model.fit_generator(
         generate_thunderhill_batches(df_train, args),
         nb_epoch=args.epoch,
-        samples_per_epoch=400*args.batch,
+        samples_per_epoch=args.batch*50,
         validation_data=generate_thunderhill_batches(df_val, args),
-        nb_val_samples=100*args.batch,
-        callbacks=[checkpointer, early_stop, logger]
+        nb_val_samples=args.batch*10,
+        callbacks=[
+            checkpointer,
+            early_stop,
+            logger,
+            board
+        ]
     )

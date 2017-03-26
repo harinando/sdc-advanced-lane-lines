@@ -16,59 +16,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
 
+
 def ReadImg(path):
     return np.array(cv2.cvtColor(cv2.imread(path.strip()), code=cv2.COLOR_BGR2RGB))
-
-def generate_validation(df, basename='data'):
-    batch_x, batch_y = [], []
-    for idx, row in df.iterrows():
-        basename = '{}/{}'.format(basename, row['center'].strip())
-        steering_angle = row['steering']
-        img = ReadImg(basename)
-        img = Preproc(img)
-        batch_x.append(np.reshape(img, (1, HEIGHT, WIDTH, DEPTH)))
-        batch_y.append([steering_angle])
-    return batch_x, batch_y
-
-
-"""
-Generator that generate batches for the neural network to train on.
-    - Randomly choose between left/center/right images
-    - Randomly shift the image
-    - Randomly flip the image
-    - Randomly change the brightness
-"""
-def generate_batches(df, batch_size, basename='data'):
-
-    while True:
-
-        batch_x = []
-        batch_y = []
-
-        for idx, row in df.iterrows():
-            camera = np.random.choice(['left', 'center', 'right'])
-            img = ReadImg('{}/{}'.format(basename, row[camera].strip()))
-
-            if camera == 'left':
-                steering_angle = min(row['steering'] + .20, 1)
-            elif camera == 'center':
-                steering_angle = row['steering']
-            elif camera == 'right':
-                steering_angle = max(row['steering'] - .20, -1)
-
-            img, steering_angle = RandomShift(img, steering_angle)
-            img, steering_angle = RandomFlip(img, steering_angle)
-            img, steering_angle = RandomBrightness(img, steering_angle)
-
-            img = Preproc(img)
-            batch_x.append(np.reshape(img, (1, HEIGHT, WIDTH, DEPTH)))
-            batch_y.append([steering_angle])
-
-            if len(batch_x) == batch_size:
-                batch_x, batch_y = shuffle(batch_x, batch_y)
-                yield np.vstack(batch_x), np.vstack(batch_y)
-                batch_x = []
-                batch_y = []
 
 
 def generate_thunderhill_batches(df, args):
@@ -80,6 +30,10 @@ def generate_thunderhill_batches(df, args):
         for idx, row in df.iterrows():
             steering_angle = row['steering']
             img = ReadImg(row['center'])
+
+            if '320x160' in row['center']:
+                img = img[20:140, :, :]
+
             img, steering_angle = RandomShift(img, steering_angle, args.adjustement)
             img, steering_angle = RandomFlip(img, steering_angle)
             img, steering_angle = RandomBrightness(img, steering_angle)
@@ -97,6 +51,36 @@ def generate_thunderhill_batches(df, args):
                 yield np.vstack(batch_x), np.vstack(batch_y)
                 batch_x = []
                 batch_y = []
+
+
+def generate_lstm_batches(df, features_extractor, seq_length, batch_size):
+    CNN_INPUT_SIZE = features_extractor.layers[11].output_shape[1]
+
+    batch_x = []
+    batch_y = []
+    while True:
+        X = []
+        i = np.random.randint(0, df.shape[0] - seq_length)
+        y = df.iloc[i+seq_length]['steering']
+
+        for idx, row in df.iloc[i: i + seq_length].iterrows():
+            img = ReadImg(row['center'])
+            if '320x160' in row['center']:
+                img = img[20:140, :, :]
+            img = Preproc(img)
+            cnn_features = features_extractor.predict(np.reshape(img, (1, HEIGHT, WIDTH, DEPTH)))[0]
+            X.append(cnn_features)
+        # batch_x.append(np.random.rand(1, seq_length, CNN_INPUT_SIZE))
+        batch_x.append(np.reshape(X, (1, seq_length, CNN_INPUT_SIZE)))
+        batch_y.append(y)
+
+        if len(batch_x) == batch_size:
+            yield np.vstack(batch_x), np.vstack(batch_y)
+            batch_x = []
+            batch_y = []
+
+
+# def extractFeatures(df)
 
 """
 Randomly split the dataset
@@ -123,7 +107,6 @@ def getDataFromFolder(folder, output, normalize=False, randomize=True, balance=T
                 skip = True
         if skip:
             continue
-
         basename = os.path.dirname(csvpath)
         df['center'] = basename + '/' + df['center']
         df['positionX'], df['positionY'], df['positionZ'] = df['position'].str.split(':', 2).str
@@ -134,10 +117,10 @@ def getDataFromFolder(folder, output, normalize=False, randomize=True, balance=T
     data = data.drop(['right', 'left'], 1)
 
     if balance:
-        data = data.where(data['steering'] != 0).dropna(axis=0)
-        # zeros = data.where(data['steering'] == 0).dropna(axis=0).sample(1500)
-        # non_zeros = data.where(data['steering'] != 0).dropna(axis=0)
-        # data = zeros.append(non_zeros)
+        # data = data.where(data['steering'] != 0).dropna(axis=0)
+        zeros = data.where(data['steering'] == 0).dropna(axis=0).sample(1000)
+        non_zeros = data.where(data['steering'] != 0).dropna(axis=0)
+        data = zeros.append(non_zeros)
 
     if randomize:
         data = shuffle(data)
