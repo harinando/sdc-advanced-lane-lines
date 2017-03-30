@@ -1,6 +1,6 @@
 import os
 
-BATCH_SIZE = 512
+BATCH_SIZE = 1
 EPOCHS = 1000
 FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
 WIDTH = 160
@@ -30,6 +30,7 @@ CNN_INPUT_SIZE = 2496
 LAYER = 11
 
 # LSTM OUTPUTS
+FEATURES = '/Users/nando/workspace/selfdrivingcar/thunderhill/lstm'
 CNN_FEATURES = os.path.join(OUTPUT, 'CNNfeatures.p')
 CNN_LABELS = os.path.join(OUTPUT, 'CNNLabels.p')
 LSTM_FEATURES = os.path.join(OUTPUT, 'LSTMfeatures.p')

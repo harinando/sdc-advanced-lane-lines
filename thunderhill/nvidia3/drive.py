@@ -64,17 +64,10 @@ def telemetry(sid, data):
         speed = data["speed"]
         # The current image from the center camera of the car
         imgString = data["image"]
-
-        # The current image position
-        positionX, positionY, positionZ = data['position'].split(":")
-
-        # the current image rotation
-        rotationX, rotationY, rotationZ = data['rotation'].split(":")
         image = Image.open(BytesIO(base64.b64decode(imgString)))
         image_array = np.asarray(image)
         image_array = image_array[20:140, :, :]
         image_array = Preproc(image_array)
-
         transformed_image_array = image_array[None, :, :, :]
         prediction = model.predict(transformed_image_array, batch_size=1)[0]
         steering_angle = float(prediction[0])
@@ -84,14 +77,17 @@ def telemetry(sid, data):
 
         # The driving model currently just outputs a constant throttle. Feel free to edit this.
         ############################# THROTTLE ##########################################################
-        # throttle = args.throttle
         if brake > 0.5:
             throttle = -brake
+
+        if float(speed) > 65:
+            throttle = 0
+
         ############################## BRAKE ############################################################
 
 
         ############################## CONTROL ###########################################################
-        print(steering_angle, throttle)
+        print(steering_angle, throttle, brake)
         send_control(steering_angle, throttle)
 
         # save frame

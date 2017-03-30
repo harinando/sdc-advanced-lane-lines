@@ -3,28 +3,22 @@ import base64
 from datetime import datetime
 import os
 import shutil
+from io import BytesIO
+import pickle
 
 import numpy as np
+from PIL import Image
+
 import socketio
 import eventlet
 import eventlet.wsgi
-from PIL import Image
 from flask import Flask
-from io import BytesIO
-
 from keras.models import load_model
-from keras.models import model_from_json
 from keras.models import Model
-
-
 import h5py
 from keras import __version__ as keras_version
-from transformations import Preproc
-import pickle
-from pandas.stats.moments import ewma
-from config import SVR_MODEL, SCALER
-from collections import deque
-
+from lstm.transformations import Preproc
+from nvidia3.config import SVR_MODEL
 
 sio = socketio.Server()
 app = Flask(__name__)

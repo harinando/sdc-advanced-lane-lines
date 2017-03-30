@@ -10,7 +10,7 @@ from keras.layers import Input, Dense, Flatten, ELU, merge
 from keras.models import Model
 from keras.regularizers import l2
 from keras.optimizers import Adam
-from nvidia.loader import generate_thunderhill_batches, getDataFromFolder
+from loader import generate_thunderhill_batches, getDataFromFolder
 from config import *
 
 """ Usefeful link
@@ -67,9 +67,7 @@ def Comma(includeTop=True):
     model.compile(optimizer=Adam(lr=0.0002), loss='mse')
     return model
 
-"""
-https://github.com/fchollet/keras/issues/2626
-"""
+
 def Hybrid():
     input_model = Input(shape=(HEIGHT, WIDTH, DEPTH))
     nvidia = Convolution2D(24, 5, 5, activation='elu', border_mode='same', subsample=(4, 4), init='he_normal', name='nvidia_conv1')(input_model)

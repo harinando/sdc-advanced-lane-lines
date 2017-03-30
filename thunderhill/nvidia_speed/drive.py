@@ -19,8 +19,7 @@ from keras.models import model_from_json
 from keras.models import Model
 import h5py
 from keras import __version__ as keras_version
-from lstm.transformations import Preproc
-from nvidia3.config import SVR_MODEL
+from transformations import Preproc
 
 sio = socketio.Server()
 app = Flask(__name__)
@@ -29,7 +28,6 @@ prev_image_array = [np.random.rand(3200)]*10
 
 lstm = None
 feature_extractor_model = None
-
 
 class SimplePIController:
     def __init__(self, Kp, Ki):
@@ -51,41 +49,9 @@ class SimplePIController:
 
         return self.Kp * self.error + self.Ki * self.integral
 
-class MovingAverage:
-
-    def __init__(self, span=20):
-        self.span = span
-        self.data = []
-
-    def append(self, x):
-        self.data.append(x)
-
-    def get(self):
-        return ewma(np.array(self.data), span=self.span)[-1]
-
-    def dump(self, fpath):
-        pickle.dump(self, open(fpath, 'wb'))
-
-
-controller = SimplePIController(0.1, 0.002)
-set_speed = 70
-controller.set_desired(set_speed)
-smoother = MovingAverage(span=20)
-
-
-
-with open('/Users/nando/Downloads/.hdf5_checkpoints-15/model.json', 'r') as f:
-    feature_extractor_model = model_from_json(f.read())
-
-feature_extractor_model.compile("adam", "mse")
-feature_extractor_model.load_weights('/Users/nando/Downloads/.hdf5_checkpoints-15/model.h5')
-
-feature_extractor = Model(input=feature_extractor_model.layers[0].input, output=feature_extractor_model.layers[6].output)
-
-feature_extractor.compile(optimizer='adam', loss='mse')
-
-X_scaler = pickle.load(open('scaler.p', 'rb'))
-svr = pickle.load(open(SVR_MODEL, 'rb'))
+# controller = SimplePIController(0.1, 0.002)
+# set_speed = 90
+# controller.set_desired(set_speed)
 
 @sio.on('telemetry')
 def telemetry(sid, data):
@@ -98,55 +64,30 @@ def telemetry(sid, data):
         speed = data["speed"]
         # The current image from the center camera of the car
         imgString = data["image"]
-
-        # The current image position
-        positionX, positionY, positionZ = data['position'].split(":")
-
-        # the current image rotation
-        rotationX, rotationY, rotationZ = data['rotation'].split(":")
-        # image = Image.open(BytesIO(base64.b64decode(imgString)))
-        # image_array = np.asarray(image)
-        # steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
-        #
-        # throttle = controller.update(float(speed))
-        #
-        # print(steering_angle, throttle)
-        # send_control(steering_angle, throttle)
         image = Image.open(BytesIO(base64.b64decode(imgString)))
-        # image_array = cv2.cvtColor(np.asarray(image), code=cv2.COLOR_RGB2BGR)
-
         image_array = np.asarray(image)
+        image_array = image_array[20:140, :, :]
         image_array = Preproc(image_array)
-
-        ################### LSTM
-        # transformed_image_array = feature_extractor.predict(np.reshape(image_array, (1, 80, 160, 3)))[0]
-
-        # Adding other features speed and other stuff...
-        # X = np.array([positionX, positionY, positionZ, rotationX, rotationY, rotationZ, speed], dtype=float)
-        # X = X_scaler.transform(X)
-        # transformed_image_array = np.hstack((transformed_image_array, X))
-
-        # prev_image_array.pop(0)
-        # prev_image_array.append(transformed_image_array)
-        # steering_angle = float(model.predict(np.array(prev_image_array)[None, :]))
-
-        ############################# Steering angles ##########################################################
         transformed_image_array = image_array[None, :, :, :]
-        steering_angle = float(model.predict(transformed_image_array, batch_size=1))
+        prediction = model.predict(transformed_image_array, batch_size=1)[0]
+        steering_angle = float(prediction[0])
+        throttle = float(prediction[1])
+        brake = float(prediction[2])
+        ############################# Steering angles ##########################################################
 
         # The driving model currently just outputs a constant throttle. Feel free to edit this.
-        throttle = args.throttle
         ############################# THROTTLE ##########################################################
-        # X = np.array([positionX, positionY, positionZ, rotationX, rotationY, rotationZ, 0, speed, steering_angle], dtype=float)
-        # X_test = X_scaler.transform(X.reshape(1, -1))
-        # throttle = np.min([1, svr.predict(X_test)])
-        ############################## BRAKE ############################################################
-        # if np.abs(steering_angle) > 0.2 and int(speed) > 50:
-        #     throttle = -throttle/4
-        # elif np.abs(steering_angle) > 0.5:
-        #     throttle = -throttle
+        if brake > 0.5:
+            throttle = -brake
 
-        print(steering_angle, throttle)
+        if float(speed) > 65:
+            throttle = 0
+
+        ############################## BRAKE ############################################################
+
+
+        ############################## CONTROL ###########################################################
+        print(steering_angle, throttle, brake)
         send_control(steering_angle, throttle)
 
         # save frame
@@ -154,7 +95,6 @@ def telemetry(sid, data):
             timestamp = datetime.utcnow().strftime('%Y_%m_%d_%H_%M_%S_%f')[:-3]
             image_filename = os.path.join(args.image_folder, timestamp)
             image.save('{}.jpg'.format(image_filename))
-            smoother.dump(os.path.join(args.image_folder, 'steering.p'))
 
     else:
         # NOTE: DON'T EDIT THIS.

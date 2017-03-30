@@ -4,7 +4,7 @@ import cv2
 import pandas as pd
 
 from keras.models import Model
-from nvidia3.config import WIDTH, HEIGHT, DEPTH
+from config import WIDTH, HEIGHT, DEPTH
 
 
 def hist(dataset, attr, title=None, xlabel=None, ylabel=None, grid=True):

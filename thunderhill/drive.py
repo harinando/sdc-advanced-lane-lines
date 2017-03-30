@@ -1,30 +1,24 @@
 import argparse
 import base64
-import json
+from io import BytesIO
 
 import numpy as np
+from PIL import Image
+
 import socketio
 import eventlet
 import eventlet.wsgi
-import time
-from PIL import Image
-from PIL import ImageOps
-from flask import Flask, render_template
-from io import BytesIO
-
+from flask import Flask
 from keras.models import model_from_json
-from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array
+
 
 # Fix error with Keras and TensorFlow
 import tensorflow as tf
 import cv2
-import matplotlib.pyplot as plt
-
-
 
 tf.python.control_flow_ops = tf
 
-from transformations import Preproc
+from lstm.transformations import Preproc
 
 
 sio = socketio.Server()

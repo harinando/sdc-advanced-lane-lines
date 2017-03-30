@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+from config import WIDTH, HEIGHT
 
 class Transform:
 
@@ -9,7 +9,6 @@ class Transform:
 
     def apply(self):
         pass
-
 
 class Grayscale(Transform):
 
@@ -175,7 +174,6 @@ class Equalizer(Transform):
 """
 Preprocessing images.
 """
-from config import WIDTH, HEIGHT
 def Preproc(img):
 
     height, width, depth = img.shape

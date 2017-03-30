@@ -72,3 +72,6 @@ class Tracker:
         self.recent_centers.append(window_centroids)
 
         return np.average(self.recent_centers[-self.smooth_factor:], axis=0)
+
+    def curverad(self, ys, xs):
+        pass

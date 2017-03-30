@@ -7,8 +7,9 @@ from keras.layers.core import Dense, Flatten, Dropout
 from keras.layers.convolutional import Convolution2D
 from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping, TensorBoard
 from keras.layers import Input, Dense, Flatten, ELU, merge
-from keras.models import Model
+from keras.models import Model, Sequential
 from keras.regularizers import l2
+from keras.layers.normalization import BatchNormalization
 from keras.optimizers import Adam
 from loader import generate_thunderhill_batches, getDataFromFolder
 from config import *
@@ -25,7 +26,8 @@ from config import *
 """
 def NvidiaModel(learning_rate, dropout):
     input_model = Input(shape=(HEIGHT, WIDTH, DEPTH))
-    x = Convolution2D(24, 5, 5, border_mode='valid', subsample=(2, 2), W_regularizer=l2(learning_rate))(input_model)
+    x = BatchNormalization(axis=1)(input_model)
+    x = Convolution2D(24, 5, 5, border_mode='valid', subsample=(2, 2), W_regularizer=l2(learning_rate))(x)
     x = ELU()(x)
     x = Convolution2D(36, 5, 5, border_mode='valid', subsample=(2, 2), W_regularizer=l2(learning_rate))(x)
     x = ELU()(x)
@@ -48,7 +50,6 @@ def NvidiaModel(learning_rate, dropout):
     model = Model(input=input_model, output=predictions)
     model.compile(optimizer='adam', loss='mse')
     return model
-
 
 if __name__ == '__main__':
 
@@ -99,7 +100,7 @@ if __name__ == '__main__':
         print("No model found")
 
     checkpointer = ModelCheckpoint(os.path.join(args.output, 'weights.{epoch:02d}-{val_loss:.3f}.hdf5'))
-    early_stop = EarlyStopping(monitor='val_loss', patience=20, verbose=0, mode='auto')
+    early_stop = EarlyStopping(monitor='val_loss', patience=50, verbose=0, mode='auto')
     logger = CSVLogger(filename=os.path.join(args.output, 'history.csv'))
     board = TensorBoard(log_dir=args.output, histogram_freq=0, write_graph=True, write_images=True)
 

@@ -181,8 +181,7 @@ def Preproc(img):
     height, width, depth = img.shape
 
     preproc = Preprocess([
-        Resize(WIDTH, HEIGHT),
-        RGB2HSV()
+        Resize(WIDTH, HEIGHT)
     ])
 
     return preproc.apply(img)

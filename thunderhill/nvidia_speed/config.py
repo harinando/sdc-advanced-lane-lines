@@ -16,4 +16,3 @@ OUTPUT = '.hdf5_checkpoints'
 COLUMNS = ["center", "left", "right", "steering", "throttle", "brake", "speed", "position", "rotation"]
 SKIP = ["dataset_sim_000_km_few_laps"]
 COLUMNS_TO_NORMALIZE = ['speed']
-SCALER = 'scaler.p'
